@@ -37,8 +37,8 @@
     // internet connectivity.
     .dependencies = .{
         .zig_zip = .{
-            .url = "git+https://github.com/zachary822/zig_zip.git?ref=main#7099e74717257757e49e2b629679a64b78fdba9e",
-            .hash = "zig_zip-0.0.2-Z7U82WxcAACpgiCnKyK9oZ4seqAf1gJ3s7zMm09WImhk",
+            .url = "git+https://github.com/zachary822/zig_zip.git?ref=main#87b581e956950e7e0900b7121edcdcf9c58378ce",
+            .hash = "zig_zip-0.0.2-Z7U82XlcAADEFmkDTcEVLoaI2nLUrs22lrK4OII_MaBa",
         },
     },
     .paths = .{

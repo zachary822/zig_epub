@@ -7,9 +7,9 @@ const testing = std.testing;
 
 pub const Epub = struct {
     allocator: std.mem.Allocator,
-    chapters: std.array_list.Managed(Chapter),
+    chapters: std.ArrayList(Chapter),
     zip_file: ZipFile,
-    content: std.array_list.Managed(u8),
+    content: std.ArrayList(u8),
 
     title: [:0]const u8,
     author: [:0]const u8,
@@ -27,7 +27,7 @@ pub const Epub = struct {
         const zip_file = ZipFile.init(allocator);
         return .{
             .allocator = allocator,
-            .chapters = std.array_list.Managed(Chapter).init(allocator),
+            .chapters = .empty,
             .title = title,
             .author = author,
             .id = id,
@@ -36,21 +36,21 @@ pub const Epub = struct {
         };
     }
 
-    pub fn deinit(self: Self) void {
+    pub fn deinit(self: *Self) void {
         self.zip_file.deinit();
         for (self.chapters.items) |file| {
             self.allocator.free(file.filename);
             self.allocator.free(file.content);
         }
-        self.chapters.deinit();
+        self.chapters.deinit(self.allocator);
     }
 
     pub fn finish(self: *Self) !void {
         try self.zip_file.addFile("mimetype", "application/epub+zip", .{ .compression_method = .store });
 
         // container
-        var container = std.array_list.Managed(u8).init(self.allocator);
-        defer container.deinit();
+        var container: std.ArrayList(u8) = .empty;
+        defer container.deinit(self.allocator);
         {
             const doc = c.xmlNewDoc(null);
             defer _ = c.xmlFreeDoc(doc);
@@ -73,18 +73,18 @@ pub const Epub = struct {
             var buffsize: i32 = undefined;
             c.xmlDocDumpMemoryEnc(doc, &xml_buff, &buffsize, "UTF-8");
 
-            try container.appendSlice(xml_buff[0..@intCast(buffsize)]);
+            try container.appendSlice(self.allocator, xml_buff[0..@intCast(buffsize)]);
         }
 
         try self.zip_file.addFile("META-INF/container.xml", container.items, .{});
 
         // write metadata
-        var opf_data = std.array_list.Managed(u8).init(self.allocator);
-        defer opf_data.deinit();
+        var opf_data: std.ArrayList(u8) = .empty;
+        defer opf_data.deinit(self.allocator);
 
         // write toc
-        var toc_data = std.array_list.Managed(u8).init(self.allocator);
-        defer toc_data.deinit();
+        var toc_data: std.ArrayList(u8) = .empty;
+        defer toc_data.deinit(self.allocator);
 
         {
             // toc
@@ -185,7 +185,7 @@ pub const Epub = struct {
                 var buffsize: i32 = undefined;
                 c.xmlDocDumpMemoryEnc(doc, &xml_buff, &buffsize, "UTF-8");
 
-                try opf_data.appendSlice(xml_buff[0..@intCast(buffsize)]);
+                try opf_data.appendSlice(self.allocator, xml_buff[0..@intCast(buffsize)]);
             }
             {
                 var xml_buff: [*c]u8 = undefined;
@@ -193,7 +193,7 @@ pub const Epub = struct {
                 var buffsize: i32 = undefined;
                 c.xmlDocDumpMemoryEnc(toc, &xml_buff, &buffsize, "UTF-8");
 
-                try toc_data.appendSlice(xml_buff[0..@intCast(buffsize)]);
+                try toc_data.appendSlice(self.allocator, xml_buff[0..@intCast(buffsize)]);
             }
         }
 
@@ -208,7 +208,7 @@ pub const Epub = struct {
     }
 
     pub fn addFile(self: *Self, name: []const u8, content: []const u8) !void {
-        try self.chapters.append(.{
+        try self.chapters.append(self.allocator, .{
             .filename = try self.allocator.dupe(u8, name),
             .content = try self.allocator.dupe(u8, content),
         });
