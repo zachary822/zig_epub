@@ -7,8 +7,9 @@ const testing = std.testing;
 
 pub const Epub = struct {
     allocator: std.mem.Allocator,
-    chapters: std.ArrayList(Chapter),
+    chapters: std.array_list.Managed(Chapter),
     zip_file: ZipFile,
+    content: std.array_list.Managed(u8),
 
     title: [:0]const u8,
     author: [:0]const u8,
@@ -23,13 +24,15 @@ pub const Epub = struct {
     };
 
     pub fn init(allocator: std.mem.Allocator, title: [:0]const u8, author: [:0]const u8, id: [:0]const u8) Self {
+        const zip_file = ZipFile.init(allocator);
         return .{
             .allocator = allocator,
-            .chapters = std.ArrayList(Chapter).init(allocator),
+            .chapters = std.array_list.Managed(Chapter).init(allocator),
             .title = title,
             .author = author,
             .id = id,
-            .zip_file = ZipFile.init(allocator),
+            .zip_file = zip_file,
+            .content = zip_file.output_buff,
         };
     }
 
@@ -46,7 +49,7 @@ pub const Epub = struct {
         try self.zip_file.addFile("mimetype", "application/epub+zip", .{ .compression_method = .store });
 
         // container
-        var container = std.ArrayList(u8).init(self.allocator);
+        var container = std.array_list.Managed(u8).init(self.allocator);
         defer container.deinit();
         {
             const doc = c.xmlNewDoc(null);
@@ -76,11 +79,11 @@ pub const Epub = struct {
         try self.zip_file.addFile("META-INF/container.xml", container.items, .{});
 
         // write metadata
-        var opf_data = std.ArrayList(u8).init(self.allocator);
+        var opf_data = std.array_list.Managed(u8).init(self.allocator);
         defer opf_data.deinit();
 
         // write toc
-        var toc_data = std.ArrayList(u8).init(self.allocator);
+        var toc_data = std.array_list.Managed(u8).init(self.allocator);
         defer toc_data.deinit();
 
         {

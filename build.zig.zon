@@ -28,7 +28,7 @@
 
     // Tracks the earliest Zig version that the package considers to be a
     // supported use case.
-    .minimum_zig_version = "0.14.0",
+    .minimum_zig_version = "0.15.0",
 
     // This field is optional.
     // Each dependency must either provide a `url` and `hash`, or a `path`.
@@ -37,8 +37,8 @@
     // internet connectivity.
     .dependencies = .{
         .zig_zip = .{
-            .url = "git+https://github.com/zachary822/zig_zip.git?ref=main#bd94aa5add58273e3174f2f2ce1f565096871df6",
-            .hash = "zig_zip-0.0.2-Z7U82cE6AAAGehd66EOdmi_NfC7qT0ql3UxmXExptpPC",
+            .url = "git+https://github.com/zachary822/zig_zip.git?ref=main#7099e74717257757e49e2b629679a64b78fdba9e",
+            .hash = "zig_zip-0.0.2-Z7U82WxcAACpgiCnKyK9oZ4seqAf1gJ3s7zMm09WImhk",
         },
     },
     .paths = .{
